@@ -1,3 +1,5 @@
+[![Version](https://img.shields.io/github/v/release/Screenly/countdown-timer-app)](https://github.com/Screenly/countdown-timer-app/releases/latest)
+
 # Screenly Countdown Timer App
 
 ![Countdown Timer Screen](./static/img/TimerPreview.png)
