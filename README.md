@@ -1,3 +1,5 @@
+[![Version](https://img.shields.io/github/v/release/Screenly/countdown-timer-app)](https://github.com/Screenly/countdown-timer-app/releases/latest)
+
 # Screenly Countdown Timer App
 
 ![Countdown Timer Screen](./static/img/TimerPreview.png)
@@ -60,3 +62,19 @@ See [this page](https://momentjs.com/) for the list of all possible values for t
 Alternatively, you can call `moment.locales()`, which returns all the supported locale values.
 
 Setting invalid values for the timezone won't crash the app itself, it'll just fall back to the default time.
+
+## Releasing
+
+Pushes to `main` start a stage deploy, which waits for approval. To release to production, tag a commit on `main` and push the tag (the workflow refuses tags not on `main`); the production deploy also waits for approval:
+
+```bash
+git checkout main && git pull
+git tag v26.10.0
+git push origin v26.10.0
+```
+
+Then publish a GitHub Release whose notes list the pull requests merged since the previous release. Add `--draft` to review the notes before publishing:
+
+```bash
+gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
+```
