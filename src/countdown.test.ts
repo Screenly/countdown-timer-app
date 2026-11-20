@@ -65,7 +65,9 @@ describe('parseTimestamp', () => {
       '2028-02-29T00:00:00.000Z',
     )
   })
+})
 
+describe('parseTimestamp across DST transitions', () => {
   test('moves times in a spring-forward gap past the transition', () => {
     // 2028-03-12 02:00 → 03:00 in New York; 02:30 does not exist
     expect(
@@ -92,11 +94,30 @@ describe('parseTimestamp', () => {
       parseTimestamp('2028-10-01T02:30:00', 'Australia/Sydney')?.toISOString(),
     ).toBe('2028-09-30T16:30:00.000Z') // 03:30 AEDT
   })
+})
+
+describe('parseTimestamp offsets and validation', () => {
+  test('rejects out-of-range values in offset timestamps', () => {
+    expect(parseTimestamp('2028-02-31T00:00:00Z', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-01-01T25:00:00+02:00', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-01-01T00:00:00+24:00', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-01-01T00:00:00+05:60', 'UTC')).toBeNull()
+  })
+
+  test('accepts fractional seconds and compact offsets', () => {
+    expect(
+      parseTimestamp('2028-01-01T00:00:00.000z', 'Asia/Tokyo')?.toISOString(),
+    ).toBe('2028-01-01T00:00:00.000Z')
+    expect(
+      parseTimestamp('2028-01-01T00:00:00-0530', 'UTC')?.toISOString(),
+    ).toBe('2028-01-01T05:30:00.000Z')
+  })
 
   test('returns null for empty or invalid values', () => {
     expect(parseTimestamp('', 'UTC')).toBeNull()
     expect(parseTimestamp(undefined, 'UTC')).toBeNull()
     expect(parseTimestamp('not a date', 'UTC')).toBeNull()
+    expect(parseTimestamp('January 1, 2028', 'UTC')).toBeNull()
   })
 })
 

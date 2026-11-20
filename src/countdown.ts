@@ -1,7 +1,8 @@
 const SECOND_MS = 1000
 
-const NAIVE_TIMESTAMP =
-  /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2}))?)?$/
+// YYYY-MM-DD, optional [T ]HH:MM[:SS[.fff]], optional Z / ±HH:MM / ±HHMM
+const ISO_TIMESTAMP =
+  /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:(Z)|([+-])(\d{2}):?(\d{2}))?)?$/i
 
 export interface CountdownState {
   remainingMs: number
@@ -80,27 +81,23 @@ export function wallClockToInstant(
 }
 
 /**
- * Parse a timestamp setting. A timestamp without an explicit offset
- * (e.g. `2028-01-01T00:00:00`) is read as wall-clock time in `timeZone`,
- * so the countdown ends at the same local moment the user typed in.
- * Out-of-range values such as `2028-02-31` or `25:00` return null.
+ * Parse an ISO 8601 timestamp setting. A timestamp without an explicit
+ * offset (e.g. `2028-01-01T00:00:00`) is read as wall-clock time in
+ * `timeZone`, so the countdown ends at the same local moment the user typed
+ * in; `Z` or `±HH:MM` pins it to an exact instant. Anything else, including
+ * out-of-range values such as `2028-02-31`, `25:00` or `+24:00`, returns null.
  */
 export function parseTimestamp(
   value: string | undefined | null,
   timeZone: string,
 ): Date | null {
-  const trimmed = value?.trim()
-  if (!trimmed) return null
-
-  const match = NAIVE_TIMESTAMP.exec(trimmed)
-  if (!match) {
-    const date = new Date(trimmed)
-    return Number.isNaN(date.getTime()) ? null : date
-  }
+  const match = ISO_TIMESTAMP.exec(value?.trim() ?? '')
+  if (!match) return null
 
   const [year, month, day, hour, minute, second] = match
-    .slice(1)
+    .slice(1, 7)
     .map((part) => Number(part ?? 0))
+  const [, , , , , , , utcDesignator, sign, offsetHours, offsetMinutes] = match
   const wallClock = Date.UTC(year, month - 1, day, hour, minute, second)
 
   // Date.UTC rolls over out-of-range fields (Feb 31 → Mar 2), so make sure
@@ -114,6 +111,16 @@ export function parseTimestamp(
     check.getUTCMinutes() === minute &&
     check.getUTCSeconds() === second
   if (!isValid) return null
+
+  if (utcDesignator) return new Date(wallClock)
+
+  if (sign) {
+    const h = Number(offsetHours)
+    const m = Number(offsetMinutes)
+    if (h > 23 || m > 59) return null
+    const offset = (sign === '-' ? -1 : 1) * (h * 60 + m) * 60 * SECOND_MS
+    return new Date(wallClock - offset)
+  }
 
   return new Date(wallClockToInstant(wallClock, timeZone))
 }
