@@ -2,7 +2,7 @@ const SECOND_MS = 1000
 
 // YYYY-MM-DD, optional [T ]HH:MM[:SS[.fff]], optional Z / ±HH:MM / ±HHMM
 const ISO_TIMESTAMP =
-  /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?(?:(Z)|([+-])(\d{2}):?(\d{2}))?)?$/i
+  /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2})(?::(\d{2})(?:\.(\d+))?)?(?:(Z)|([+-])(\d{2}):?(\d{2}))?)?$/i
 
 export interface CountdownState {
   remainingMs: number
@@ -97,8 +97,23 @@ export function parseTimestamp(
   const [year, month, day, hour, minute, second] = match
     .slice(1, 7)
     .map((part) => Number(part ?? 0))
-  const [, , , , , , , utcDesignator, sign, offsetHours, offsetMinutes] = match
-  const wallClock = Date.UTC(year, month - 1, day, hour, minute, second)
+  const [
+    ,
+    ,
+    ,
+    ,
+    ,
+    ,
+    ,
+    fraction,
+    utcDesignator,
+    sign,
+    offsetHours,
+    offsetMinutes,
+  ] = match
+  // Keep millisecond precision; anything finer is below what Date can hold
+  const ms = fraction ? Number(fraction.slice(0, 3).padEnd(3, '0')) : 0
+  const wallClock = Date.UTC(year, month - 1, day, hour, minute, second, ms)
 
   // Date.UTC rolls over out-of-range fields (Feb 31 → Mar 2), so make sure
   // every component survived unchanged.

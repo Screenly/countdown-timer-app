@@ -104,6 +104,21 @@ describe('parseTimestamp offsets and validation', () => {
     expect(parseTimestamp('2028-01-01T00:00:00+05:60', 'UTC')).toBeNull()
   })
 
+  test('keeps fractional seconds to the millisecond', () => {
+    expect(
+      parseTimestamp('2028-01-01T00:00:00.999Z', 'UTC')?.toISOString(),
+    ).toBe('2028-01-01T00:00:00.999Z')
+    expect(parseTimestamp('2028-01-01T00:00:00.5Z', 'UTC')?.toISOString()).toBe(
+      '2028-01-01T00:00:00.500Z',
+    )
+    expect(
+      parseTimestamp(
+        '2028-01-01T00:00:00.123456',
+        'America/New_York',
+      )?.toISOString(),
+    ).toBe('2028-01-01T05:00:00.123Z')
+  })
+
   test('accepts fractional seconds and compact offsets', () => {
     expect(
       parseTimestamp('2028-01-01T00:00:00.000z', 'Asia/Tokyo')?.toISOString(),
