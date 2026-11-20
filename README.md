@@ -2,7 +2,7 @@
 
 # Screenly Countdown Timer App
 
-![Countdown Timer App Preview](/screenshots/1920x1080.webp)
+![Countdown Timer App Preview](./screenshots/1920x1080.webp)
 
 Counts down the days, hours, minutes and seconds to a target date, with a progress bar from the start date to the target. When the countdown reaches zero, the end message replaces the digits.
 

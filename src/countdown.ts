@@ -48,10 +48,42 @@ export function getTimeZoneOffset(date: Date, timeZone: string): number {
   return asUtc - Math.floor(date.getTime() / SECOND_MS) * SECOND_MS
 }
 
+const DAY_MS = 24 * 60 * 60 * SECOND_MS
+
+/**
+ * Convert a wall-clock time (expressed as if it were UTC) in `timeZone` to
+ * a real instant. DST transitions follow the same policy as Temporal's
+ * `compatible` disambiguation:
+ * - a time repeated by a fall-back transition resolves to the earlier one
+ * - a time skipped by a spring-forward gap moves forward by the gap length
+ *   (e.g. 02:30 on a 02:00 → 03:00 night becomes 03:30)
+ */
+export function wallClockToInstant(
+  wallClock: number,
+  timeZone: string,
+): number {
+  const offsetBefore = getTimeZoneOffset(new Date(wallClock - DAY_MS), timeZone)
+  const offsetAfter = getTimeZoneOffset(new Date(wallClock + DAY_MS), timeZone)
+
+  const candidates = [offsetBefore, offsetAfter]
+    .map((offset) => wallClock - offset)
+    .filter(
+      (instant) =>
+        wallClock - getTimeZoneOffset(new Date(instant), timeZone) === instant,
+    )
+
+  if (candidates.length > 0) return Math.min(...candidates)
+
+  // Nonexistent local time: read it with the pre-transition offset, which
+  // lands the same distance past the transition as the gap skipped.
+  return wallClock - offsetBefore
+}
+
 /**
  * Parse a timestamp setting. A timestamp without an explicit offset
  * (e.g. `2028-01-01T00:00:00`) is read as wall-clock time in `timeZone`,
  * so the countdown ends at the same local moment the user typed in.
+ * Out-of-range values such as `2028-02-31` or `25:00` return null.
  */
 export function parseTimestamp(
   value: string | undefined | null,
@@ -66,15 +98,24 @@ export function parseTimestamp(
     return Number.isNaN(date.getTime()) ? null : date
   }
 
-  const [, y, mo, d, h = '0', mi = '0', s = '0'] = match
-  const wallClock = Date.UTC(+y, +mo - 1, +d, +h, +mi, +s)
-  if (Number.isNaN(wallClock)) return null
+  const [year, month, day, hour, minute, second] = match
+    .slice(1)
+    .map((part) => Number(part ?? 0))
+  const wallClock = Date.UTC(year, month - 1, day, hour, minute, second)
 
-  // Two passes settle the offset correctly around DST transitions.
-  let utc = wallClock - getTimeZoneOffset(new Date(wallClock), timeZone)
-  utc = wallClock - getTimeZoneOffset(new Date(utc), timeZone)
+  // Date.UTC rolls over out-of-range fields (Feb 31 → Mar 2), so make sure
+  // every component survived unchanged.
+  const check = new Date(wallClock)
+  const isValid =
+    check.getUTCFullYear() === year &&
+    check.getUTCMonth() === month - 1 &&
+    check.getUTCDate() === day &&
+    check.getUTCHours() === hour &&
+    check.getUTCMinutes() === minute &&
+    check.getUTCSeconds() === second
+  if (!isValid) return null
 
-  return new Date(utc)
+  return new Date(wallClockToInstant(wallClock, timeZone))
 }
 
 export function createCountdownState(

@@ -55,6 +55,44 @@ describe('parseTimestamp', () => {
     ).toBe('2027-12-31T22:00:00.000Z')
   })
 
+  test('rejects out-of-range calendar and time components', () => {
+    expect(parseTimestamp('2028-02-31T00:00:00', 'UTC')).toBeNull()
+    expect(parseTimestamp('2027-02-29', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-13-01', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-01-01T24:00:00', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-01-01T10:60', 'UTC')).toBeNull()
+    expect(parseTimestamp('2028-02-29', 'UTC')?.toISOString()).toBe(
+      '2028-02-29T00:00:00.000Z',
+    )
+  })
+
+  test('moves times in a spring-forward gap past the transition', () => {
+    // 2028-03-12 02:00 → 03:00 in New York; 02:30 does not exist
+    expect(
+      parseTimestamp('2028-03-12T02:30:00', 'America/New_York')?.toISOString(),
+    ).toBe('2028-03-12T07:30:00.000Z') // 03:30 EDT
+    expect(
+      parseTimestamp('2028-03-12T03:30:00', 'America/New_York')?.toISOString(),
+    ).toBe('2028-03-12T07:30:00.000Z')
+    expect(
+      parseTimestamp('2028-03-12T01:30:00', 'America/New_York')?.toISOString(),
+    ).toBe('2028-03-12T06:30:00.000Z') // 01:30 EST
+  })
+
+  test('resolves repeated fall-back times to the earlier instant', () => {
+    // 2028-11-05 02:00 → 01:00 in New York; 01:30 happens twice
+    expect(
+      parseTimestamp('2028-11-05T01:30:00', 'America/New_York')?.toISOString(),
+    ).toBe('2028-11-05T05:30:00.000Z') // 01:30 EDT
+  })
+
+  test('handles DST in the southern hemisphere', () => {
+    // 2028-10-01 02:00 → 03:00 in Sydney
+    expect(
+      parseTimestamp('2028-10-01T02:30:00', 'Australia/Sydney')?.toISOString(),
+    ).toBe('2028-09-30T16:30:00.000Z') // 03:30 AEDT
+  })
+
   test('returns null for empty or invalid values', () => {
     expect(parseTimestamp('', 'UTC')).toBeNull()
     expect(parseTimestamp(undefined, 'UTC')).toBeNull()
