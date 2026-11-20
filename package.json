@@ -1,0 +1,35 @@
+{
+  "name": "countdown-timer",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "prebuild": "bun run type-check",
+    "generate-mock-data": "screenly edge-app run --generate-mock-data",
+    "predev": "bun run generate-mock-data",
+    "dev": "edge-apps-scripts dev",
+    "build": "edge-apps-scripts build",
+    "build:dev": "edge-apps-scripts build:dev",
+    "build:prod": "edge-apps-scripts build",
+    "test": "bun test src/",
+    "test:unit": "bun test src/",
+    "lint": "edge-apps-scripts lint --fix",
+    "format": "prettier --write src/ README.md index.html",
+    "format:check": "prettier --check src/ README.md index.html",
+    "deploy": "bun run build && screenly edge-app deploy --path=dist/",
+    "type-check": "edge-apps-scripts type-check",
+    "screenshots": "edge-apps-scripts screenshots"
+  },
+  "dependencies": {},
+  "prettier": "./.prettierrc.json",
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@screenly/edge-apps": "^26.8.0",
+    "@types/bun": "^1.4.4",
+    "@types/jsdom": "^30.0.0",
+    "bun-types": "^1.4.4",
+    "jsdom": "^31.0.0",
+    "npm-run-all2": "^9.0.4",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3"
+  }
+}

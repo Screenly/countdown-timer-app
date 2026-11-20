@@ -2,68 +2,27 @@
 
 # Screenly Countdown Timer App
 
-![Countdown Timer Screen](./static/img/TimerPreview.png)
+![Countdown Timer App Preview](./screenshots/1920x1080.webp)
 
-## Installation
+Counts down the days, hours, minutes and seconds to a target date, with a progress bar from the start date to the target. When the countdown reaches zero, the end message replaces the digits.
 
-```bash
-$ cd edge-apps/countdown-timer
-$ screenly edge-app create \
-    --name countdown-timer \
-    --in-place
-$ screenly edge-app deploy
-[...] # You can tweak settings here.
-# To install an app, you need to create an instance.
-$ screenly edge-app instance create
-
-# Alternatively, you can use --latest in place of --revision.
-```
-
-## Tweaking the settings
-
-### `target_timestamp`
-
-To set the countdown timer, we can use the `target_timestamp` settings.
+## Getting Started
 
 ```bash
-$ Screenly edge-app setting set target_timestamp=2024-03-14T00:00:00
-# A relatively long console output...
-Edge app setting successfully set.
+bun install
 ```
 
-where `2024-03-14T00:00:00` your countdown timer limit with `YYYY-MM-DDTHH:MM:SS` format.
+## Deployment
 
-### `countdown_headline`
-
-To set the countdown timer headline, we can use the `countdown_headline` settings.
+Create and deploy the Edge App:
 
 ```bash
-$ Screenly edge-app setting set countdown_headline='New Year Countdown'
-# A relatively long console output...
-Edge app setting successfully set.
+screenly edge-app create --name my-countdown-timer --in-place
+bun run deploy
+screenly edge-app instance create
 ```
 
-### `override_timezone`
-
-For instance, if you want to set the countdown timer as per the current date and time in London,
-run the following command after setting the timer:
-
-```bash
-$ screenly edge-app setting set override_timezone='Europe/Paris'
-# A relatively long console output...
-Edge app setting successfully set.
-
-$ screenly edge-app setting set override_locale='fr'
-# A relatively long console output...
-Edge app setting successfully set.
-```
-
-See [this page](https://momentjs.com/) for the list of all possible values for the time zone.
-Alternatively, you can call `moment.locales()`, which returns all the supported locale values.
-
-Setting invalid values for the timezone won't crash the app itself, it'll just fall back to the default time.
-
-## Releasing
+### Releasing
 
 Pushes to `main` start a stage deploy, which waits for approval. To release to production, tag a commit on `main` and push the tag (the workflow refuses tags not on `main`); the production deploy also waits for approval:
 
@@ -78,3 +37,42 @@ Then publish a GitHub Release whose notes list the pull requests merged since th
 ```bash
 gh release create v26.10.0 --verify-tag --generate-notes --title v26.10.0
 ```
+
+## Configuration
+
+The app accepts the following settings via `screenly.yml`:
+
+| Setting              | Description                                                                                                                                             | Type               | Default               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | --------------------- |
+| `countdown_headline` | Headline displayed above the countdown                                                                                                                  | required           | `New Year Countdown`  |
+| `target_timestamp`   | When the countdown ends (`YYYY-MM-DDTHH:MM:SS`), read as local time in the screen's timezone. Add an offset (e.g. `Z` or `+02:00`) to pin it explicitly | required           | `2028-01-01T00:00:00` |
+| `starting_timestamp` | When the countdown begins (`YYYY-MM-DDTHH:MM:SS`), used for the progress bar. The bar is hidden if this is not before the target                        | required           | `2025-01-01T00:00:00` |
+| `countdown_end_text` | Message displayed when the countdown reaches zero                                                                                                       | required           | `Countdown Finished!` |
+| `override_locale`    | Override the locale used for unit labels and dates (e.g. `en`, `fr`, `de`)                                                                              | optional, advanced | `en`                  |
+| `override_timezone`  | Override the timezone (e.g. `Europe/London`, `America/New_York`). Defaults to the screen's timezone if left blank                                       | optional, advanced | -                     |
+| `display_errors`     | Display detailed error messages on screen for debugging purposes                                                                                        | optional, advanced | `false`               |
+
+The accent color follows the screen's brand settings.
+
+## Development
+
+```bash
+bun install      # Install dependencies
+bun run dev      # Start development server
+```
+
+## Testing
+
+```bash
+bun test
+```
+
+## Screenshots
+
+Generate screenshots at all supported resolutions:
+
+```bash
+bun run screenshots
+```
+
+Screenshots are saved to the `screenshots/` directory.
