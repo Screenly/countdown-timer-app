@@ -102,6 +102,7 @@ async function start(): Promise<void> {
 
   if (!target) {
     console.error('Invalid or missing target_timestamp setting')
+    root.classList.add('is-invalid')
     signalReady()
     return
   }

@@ -115,6 +115,26 @@ auto-scaler {
   line-height: 1.1;
 }
 
+/* Invalid target */
+
+.countdown-invalid {
+  display: none;
+  margin: 0;
+  color: var(--countdown-ink-dim);
+  font-size: 5rem;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.is-invalid .countdown-invalid {
+  display: block;
+}
+
+.is-invalid .countdown-digits,
+.is-invalid .countdown-meta {
+  display: none;
+}
+
 /* Finished state */
 
 .countdown-finished {
